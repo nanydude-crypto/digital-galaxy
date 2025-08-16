@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>Force-Directed Layout</title>
+
+    <!-- 1. D3 v3 (needed by your force.js) with local fallback -->
+    <!--<script src="https://d3js.org/d3.v3.min.js"></script> -->
+    <script src="lib/d3.v3.min.js"></script>
+
+
+
+
+<!-- parent-folder files need ../ -->
+    <script src="./spider.js"></script>
+    <script src="spider_images_by_page.js"></script>  <!-- this one is in web/ -->
+    <script src="./spider_images.js"></script>       <!-- if you still use it -->
+    <script src="spider_heroes.js"></script>
+<!-- The chart container MUST be here before force.js -->
+    <div id="chart" style="border:1px solid #ddd"></div>
+    <link rel="stylesheet" href="force.css"/>
+
+
+
+    <script src="force.js"></script>
+
+
+
+
+
+
+
+    <script>
+      if (!window.d3) {
+        document.write('<script src="d3.v3.min.js"><\/script>');
+      }
+    </script>
+
+    <!-- 2-6. Your data files in correct order -->
+    <!--<script src="spider.js"></script> -->
+    <!--<script src="spider_images_by_page.js"></script>-->
+
+    <!--<script src="spider_images.js"></script>-->
+
+    <script src="spider_text_by_page.js"></script>
+
+
+    <link rel="stylesheet" href="force.css"/>
+
+    <style>
+      #overlay .colorchip {
+        height: 24px;
+        border-radius: 8px;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        margin: 12px auto 0;
+        width: 200px;
+        position: relative;
+        cursor: pointer;
+      }
+
+      #overlay .colorchip::after {
+        content: attr(data-color);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 11px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.9);
+        text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+        pointer-events: none;
+      }
+
+      /* Overlay gallery with improved text display */
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,.7);
+        z-index: 9999;
+      }
+
+      #overlay .panel {
+        background: #fff;
+        width: min(1200px, 95vw);
+        max-height: 95vh;
+        overflow: hidden;
+        border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0,0,0,.45);
+        display: flex;
+        flex-direction: column;
+      }
+
+      #overlay header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        border-bottom: 1px solid #eee;
+        background: #fff;
+        z-index: 1;
+        flex-shrink: 0;
+      }
+
+      #overlay header .title { font-weight: 600; }
+
+      #overlay header .actions button {
+        margin-left: 8px;
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background: #fafafa;
+        cursor: pointer;
+      }
+
+      #overlay header .actions button:hover { background: #f0f0f0; }
+
+      /* Scrollable content area */
+      #overlay .content-area {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
+
+      #overlay .grid {
+        padding: 12px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+      }
+
+      #overlay .grid img {
+        width: 100%;
+        height: 110px;
+        object-fit: cover;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      #overlay .grid img:hover { transform: scale(1.05); }
+
+      /* Hero image styles */
+      #overlay .hero {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        display: none;
+        flex-shrink: 0;
+      }
+
+      #overlay .hero img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 12px;
+        display: block;
+        margin: 0 auto;
+        cursor: pointer;
+      }
+
+      /* Enhanced text box with scrolling */
+      #overlay .textbox {
+        padding: 16px;
+        border-top: 1px solid #eee;
+        display: none;
+        background: #fafafa;
+        max-height: 400px;
+        overflow-y: auto;
+        flex-shrink: 0;
+      }
+
+      #overlay .textbox h3 {
+        margin: 0 0 12px 0;
+        font-size: 18px;
+        color: #333;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        background: #fafafa;
+        padding: 4px 0;
+        border-bottom: 1px solid #ddd;
+      }
+
+      #overlay .textbox .text-content {
+        white-space: pre-wrap;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        line-height: 1.6;
+        color: #444;
+        font-size: 14px;
+        padding: 8px 0;
+      }
+
+      /* Custom scrollbar styling */
+      #overlay .content-area::-webkit-scrollbar,
+      #overlay .textbox::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      #overlay .content-area::-webkit-scrollbar-track,
+      #overlay .textbox::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+      }
+
+      #overlay .content-area::-webkit-scrollbar-thumb,
+      #overlay .textbox::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+      }
+
+      #overlay .content-area::-webkit-scrollbar-thumb:hover,
+      #overlay .textbox::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        #overlay .panel {
+          width: 98vw;
+          max-height: 98vh;
+        }
+
+        #overlay .textbox {
+          max-height: 300px;
+          padding: 12px;
+        }
+
+        #overlay .grid {
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 8px;
+          padding: 8px;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="font-family: sans-serif;">
+    <script>
+      if (window.spiderJson && window.spiderJson.nodes && window.spiderJson.nodes[0]) {
+        document.write("<p>Starting url: " + spiderJson.nodes[0].url + "</p>");
+      }
+    </script>
+
+
+    <!-- Enhanced image gallery overlay with scrolling -->
+    <div id="overlay">
+      <div class="panel">
+        <header>
+          <div class="title" id="ov-title">Images</div>
+          <div class="actions">
+            <button id="ov-open">Open page</button>
+            <button id="ov-close">Close</button>
+          </div>
+        </header>
+
+        <div class="content-area">
+          <div id="ov-hero" class="hero"></div>
+          <div id="ov-grid" class="grid"></div>
+          <div id="ov-text" class="textbox"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. Force graph (must come AFTER D3 and spider*.js) -->
+    <script src="force.js"></script>
+
+    <!-- Wire overlay close/escape -->
+    <script>
+      (function(){
+        var ov = document.getElementById('overlay');
+        if (!ov) return;
+        var close = function(){ ov.style.display='none'; };
+        var btn = document.getElementById('ov-close');
+        if (btn) btn.onclick = close;
+        ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+      })();
+    </script>
+
+    <!-- Diagnostics -->
+    <script>
+      (function(){
+        var problems = [];
+        if (!window.d3) problems.push("D3 failed to load");
+        if (!window.spiderJson) problems.push("spider.js not loaded (no spiderJson)");
+
+        // Wait a bit for force.js to run
+        setTimeout(function() {
+          if (!document.querySelector('#chart svg')) {
+            problems.push("SVG not created by force.js");
+
+            // If we have D3 and data but no SVG, show what's available
+            if (window.d3 && window.spiderJson) {
+              problems.push("D3 and data loaded but force.js may have errors");
+            }
+          }
+
+          var el = document.createElement('div');
+          el.style.cssText = "position:fixed;bottom:10px;left:10px;background:#111;color:#fff;padding:8px 10px;border-radius:6px;font:12px/1.4 monospace;z-index:99999;opacity:.9";
+
+          if (problems.length) {
+            el.textContent = "⚠ Issues: " + problems.join(" | ");
+            el.style.background = "#c00";
+          } else {
+            el.textContent = "✓ All systems operational";
+            el.style.background = "#090";
+          }
+
+          document.body.appendChild(el);
+
+          // Auto-hide success message after 3 seconds
+          if (problems.length === 0) {
+            setTimeout(function() {
+              el.style.transition = "opacity 0.5s";
+              el.style.opacity = "0";
+              setTimeout(function() { el.remove(); }, 500);
+            }, 3000);
+          }
+        }, 100);
+      })();
+    </script>
+
+    <p>If you don't see a chart above, check the JavaScript console for errors.</p>
+  </body>
+</html>

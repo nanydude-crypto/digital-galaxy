@@ -1,0 +1,68 @@
+/* base styles */
+circle.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+
+line.link {
+  stroke: #999;
+  stroke-opacity: .6;
+}
+
+/* --- background-color rings & pulse --- */
+
+@keyframes nodeRingPulse {
+  0%   { stroke-width: 2px; }
+  50%  { stroke-width: 5px; }
+  100% { stroke-width: 2px; }
+}
+
+/* JS adds .bg-ring and sets the stroke color */
+svg circle.node.bg-ring {
+  stroke-width: 8px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* optional pulsing ring (remove this class in JS if you don't want it) */
+svg circle.node.bg-pulse {
+  animation: nodeRingPulse 1.2s ease-in-out infinite;
+}
+
+/* hide any existing inline labels */
+text.nlabel { display: none !important; }
+/* --- search blast effect --- */
+@keyframes searchHue {
+  0%   { filter: hue-rotate(0deg) saturate(1.8) brightness(1.15); }
+  50%  { filter: hue-rotate(180deg) saturate(3.0) brightness(1.35); }
+  100% { filter: hue-rotate(360deg) saturate(1.8) brightness(1.15); }
+}
+
+svg circle.node.search-crazy {
+  animation: searchHue 0.3s linear infinite;
+  stroke: #fff !important;     /* bright ring on top of your site-color stroke */
+  stroke-width: 14px !important;
+  filter: drop-shadow(0 0 8px rgba(255,255,255,.9));
+  mix-blend-mode: screen;       /* pops over dark fills */
+}
+
+#search-ui {
+  position: fixed;
+  top: 10px; right: 10px;
+  z-index: 99999;
+  display: flex; gap: 6px; align-items: center;
+  background: rgba(10,10,10,.7);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px; padding: 8px 10px;
+  backdrop-filter: blur(4px);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+}
+#search-ui input {
+  width: 240px; outline: none; border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.06); color: #fff; padding: 6px 8px; border-radius: 6px;
+}
+#search-ui button {
+  border: 0; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+}
+#search-ui .go { background: #00e5ff; color: #000; }
+#search-ui .clear { background: #ff004d; color: #fff; }
